@@ -1,5 +1,5 @@
 import  Sequelize, { Model }  from "sequelize";
-import { sequelize,postgresConnect } from '../core/db_connection';
+import { sequelize,postgresConnect } from '../connections/local_db';
 
 class Users extends Model{
     public email!:string;

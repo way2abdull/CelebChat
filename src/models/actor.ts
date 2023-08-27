@@ -1,9 +1,10 @@
 import Sequelize, { IntegerDataType, Model } from "sequelize";
 import { sequelize, postgresConnect  } from "../connections/local_db";
 
-   export class SessionSchema extends Model{
-        public user_id!: number;
-        public device_type!: string;
+   export class actorSchema extends Model{
+        public actor_id!: number;
+        public name!: string;
+        public gender!:Enumerator;
         public isActive!: boolean;
         id: {
             allowNull: false,
@@ -13,14 +14,15 @@ import { sequelize, postgresConnect  } from "../connections/local_db";
 
         };
     }
-   SessionSchema.init({
-    user_id: {type: Sequelize.NUMBER},
-    device_type: {type: Sequelize.STRING},
+   actorSchema.init({
+    actor_id: {type: Sequelize.NUMBER},
+    name: {type: Sequelize.STRING},
+    gender: {type: Sequelize.ENUM("Male", "Female")},
     isActive: {type: Sequelize.BOOLEAN}
    },{
     sequelize:sequelize,
-    modelName: 'SessionSchema',
-    tableName: 'sessions'
+    modelName: 'actorSchema',
+    tableName: 'actors'
    });
     
 // export {SessionSchema};

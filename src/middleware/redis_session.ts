@@ -1,7 +1,7 @@
 import { createClient } from "redis";
-import redisClient from "../core/redis_connect";
-import {SessionSchema} from '../models/session'
-import { Request,Response } from 'express'
+import redisClient from "../connections/redis";
+import { SessionSchema } from '../models/session'
+import { Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import { Op } from 'sequelize'
@@ -12,7 +12,7 @@ dotenv.config();
 // client.on('error', err => console.log('unable to connect reddis client', err));
 
 export class Redis {
-    static async rediss_session(client:any,user:any, device:any) {
+    static async rediss_session(client: any, user: any, device: any) {
         try {
             // client.on('error', err => console.log('Redis client error', err));
             if (user) {
@@ -34,8 +34,8 @@ export class Redis {
         }
     }
 
-    static async logout_session_redis(client:any, user:any) {
-        console.log("redis logout ",user.name);
+    static async logout_session_redis(client: any, user: any) {
+        console.log("redis logout ", user.name);
         try {
             await client.del(user.name);
             console.log("Delition successfully");
@@ -45,44 +45,66 @@ export class Redis {
         }
     }
 
+    static async save_otp(email: any, OTP: any) {
+        redisClient.on('error', err => console.log('Redis client error', err));
+        try {
+            await redisClient.setEx(email, 300, JSON.stringify({
+                otp: OTP
+            }));
+            console.log("otp stored successfully");
+        }
+        catch (err) {
+            console.log(err);
+        }
+    }
+
+    static async get_otp(email: any) {
+        if (await redisClient.exists(email)) {
+            const otp_details = await redisClient.get(email);
+            const userOTP = JSON.parse(otp_details);
+            return userOTP.otp
+        }
+        else {
+            return false;
+        }
+    }
 }
 
 
-export const sessionCheck=async (req:Request,res:Response,next:()=>void)=>{
-  const SECRET_KEY=process.env.SECRET_KEY
-  const token=req.headers.authorization
-  let decode:any;
-  try{ 
-        decode= jwt.verify(token,SECRET_KEY)
-        req.body.id=decode?.id;
-        let redisData:any=await redisClient.get(`${decode?.email}`)
+export const sessionCheck = async (req: Request, res: Response, next: () => void) => {
+    const SECRET_KEY = process.env.SECRET_KEY
+    const token = req.headers.authorization
+    let decode: any;
+    try {
+        decode = jwt.verify(token, SECRET_KEY)
+        req.body.id = decode?.id;
+        let redisData: any = await redisClient.get(`${decode?.email}`)
         console.log(redisData);
-        if(!(redisData.isActive==true)){
+        if (!(redisData.isActive == true)) {
             console.log("No sesion found")
-        let data=await SessionSchema.findOne({
-            where:{
+            let data = await SessionSchema.findOne({
+                where: {
                     [Op.and]: [
-                      { userId: decode?.email },
-                      { isActive: true }
-                    ]      
+                        { userId: decode?.email },
+                        { isActive: true }
+                    ]
                 }
             })
-            console.log(data,decode.email,typeof decode.email)
-            data=JSON.parse(JSON.stringify(data))
+            console.log(data, decode.email, typeof decode.email)
+            data = JSON.parse(JSON.stringify(data))
             console.log(data)
-            if(data)
-            {
-              redisClient.setEx(`${decode?.email}`,3600,"true")
-              next()
-            }else{
+            if (data) {
+                redisClient.setEx(`${decode?.email}`, 3600, "true")
+                next()
+            } else {
                 res.send("Authentication error")
             }
-        }else {
+        } else {
             console.log("session found")
             next()
         }
-    }catch(err){
+    } catch (err) {
         console.log(err);
-    res.status(400).send(err)
-  }
+        res.status(400).send(err)
+    }
 }

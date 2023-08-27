@@ -1,5 +1,5 @@
 import Sequelize, { IntegerDataType, Model } from "sequelize";
-import { sequelize, postgresConnect  } from "../core/db_connection";
+import { sequelize, postgresConnect  } from "../connections/local_db";
 
    export class SessionSchema extends Model{
         public user_id!: number;
